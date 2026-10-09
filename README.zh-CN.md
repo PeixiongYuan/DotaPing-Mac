@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-把 Dota 2 的信号轮盘搬到 Mac 桌面上的菜单栏小工具。按住快捷键（或像游戏里一样 ⌥ + 点击），指向一个信号，松开，信号就落在起点，带动画和提示音。鼠标、触控板都能用。界面默认英文，可切换为简体中文。
+把 Dota 2 的信号轮盘搬到 Mac 桌面上的菜单栏小工具。按住快捷键（或像游戏里一样 ⌥ + 点击），指向一个信号，松开，信号就落在起点，带动画和提示音。鼠标、触控板都能用。界面默认英文，可切换为简体中文；也可以在应用内下载游戏原版信号音效。
 
 本项目基于 **[AllenTHT/LoLPing-Mac](https://github.com/AllenTHT/LoLPing-Mac)**（英雄联盟版本）。应用结构、修饰键手势状态机、覆盖窗口和自检工具改编自该项目；Dota 2 信号内容、图标、音效、触控板处理、⌥ + 左键触发和双语界面是新写的。
 
@@ -40,7 +40,7 @@ zsh scripts/test.sh    # 手势、数据、语言、图标与音效检查
 | **按住 ⌃⌥⌘**（默认，也可选 ⌃⌥⇧、⌃⌘⇧） | 按住约 0.2 秒打开轮盘，移动指针选择，松开任意一键发送；轮盘打开时点按或轻点触控板立即发送。不需要按鼠标键。 |
 | **⌥ + 左键**（与游戏相同） | ⌥ 点按发信号，⌃⌥ 点按发警告，⌥ 按住左键拖动打开轮盘、松开发送。开启期间 ⌥ 点按由本程序占用。 |
 
-Esc 或右键取消。信号落在打开轮盘的位置；轮盘贴近屏幕边缘会向内移动，落点不变。关闭窗口后仍在菜单栏运行。触发方式、玩家颜色、大小、音量和语言自动保存。软件不添加登录项，不联网，不记录键盘输入内容。
+Esc 或右键取消。信号落在打开轮盘的位置；轮盘贴近屏幕边缘会向内移动，落点不变。关闭窗口后仍在菜单栏运行。触发方式、玩家颜色、大小、音量、音效和语言自动保存。软件不添加登录项，不记录键盘输入内容；除非选择「音效 → Dota 2 原声」，否则不联网。
 
 ### 触控板
 
@@ -69,10 +69,12 @@ Esc 或右键取消。信号落在打开轮盘的位置；轮盘贴近屏幕边�
 
 ## 图标与音效
 
-**不包含任何 Valve 图片或音频文件。**
+**仓库和安装包都不包含任何 Valve 图片或音频文件。**
 
 - 图标是矢量重画，能核对到原版的都照原版造型：圆环「!」、两端张开的 X、三箭头汇聚的「我马上到」、剑、顶边带凹口的盾、守卫眼睛。游戏里敌我守卫共用同一个眼睛、只靠颜色区分；这里友方守卫画成描边眼睛，未高亮时也能分清。「小心」和「援助」的标准原版图标找不到公开来源，分别画成倒三角警示（参照游戏的「Caution!」赛季信号）和举起的手。
-- 七种提示音在启动时程序合成（`Sources/PingCore/SoundSynth.swift`），不是游戏原声。点「自定义音效…」可打开 `~/Library/Application Support/DotaPing/Sounds/`，放入同名文件（`ping`、`ping_warning`、`ping_waypoint`、`ping_attack`、`ping_enemy_ward`、`ping_friendly_ward`、`ping_defense`，wav / mp3 / m4a / aiff / caf）即可替换，下一次信号生效。
+- **音效 → 内置合成**（默认）：启动时程序合成的七种提示音（`Sources/PingCore/SoundSynth.swift`）。
+- **音效 → Dota 2 原声**：从社区存档 [Source2Sounds/dota2](https://github.com/Source2Sounds/dota2) 下载游戏自带的信号音效（`sounds/ui/ping*.wav`），固定到某个提交并逐个校验 SHA-256，再按游戏音效事件的参数混音：各信号音量不同，警告叠加一层升调 1.25 倍的音，进攻叠加一层降调 0.95 倍、延迟 0.1 秒的音。结果只保存在本机 `~/Library/Application Support/DotaPing/GameSounds/`，不在本仓库或 Release 中。音效版权归 Valve。
+- 点「自定义音效…」可打开 `~/Library/Application Support/DotaPing/Sounds/`，放入同名文件（`ping`、`ping_warning`、`ping_waypoint`、`ping_attack`、`ping_enemy_ward`、`ping_friendly_ward`、`ping_defense`，wav / mp3 / m4a / aiff / caf）即可替换，下一次信号生效。
 - 落点动画按 `ping_wheel.vdata` 中的小地图信号参数在 AppKit 里重建：光圈 0.3 秒收拢并跳动、向外扩散的脉冲、图标浮起并在上方显示队伍文字、最后淡出。是同风格重建，不是逐帧复刻。
 
 ## 自检
@@ -81,6 +83,7 @@ Esc 或右键取消。信号落在打开轮盘的位置；轮盘贴近屏幕边�
 dist/DotaPing.app/Contents/MacOS/DotaPing --check-assets
 dist/DotaPing.app/Contents/MacOS/DotaPing --visual-check "$PWD/Verification/Visuals"
 dist/DotaPing.app/Contents/MacOS/DotaPing --export-sounds /tmp/dotaping-sounds
+dist/DotaPing.app/Contents/MacOS/DotaPing --install-game-sounds /tmp/dotaping-game-sounds
 ```
 
 测试与验证细节见 [README.md](README.md#self-checks) 和 [VERIFICATION.md](VERIFICATION.md)。
@@ -90,5 +93,6 @@ dist/DotaPing.app/Contents/MacOS/DotaPing --export-sounds /tmp/dotaping-sounds
 - [AllenTHT/LoLPing-Mac](https://github.com/AllenTHT/LoLPing-Mac)：本项目的基础。
 - [SteamDatabase/GameTracking-Dota2](https://github.com/SteamDatabase/GameTracking-Dota2)：`ping_wheel.vdata`、轮盘样式表与本地化文本的参考来源，只使用了文字、颜色值和时长。
 - [Liquipedia](https://liquipedia.net/dota2/)：其 Dota 2 图片库是图标造型的参考，未复制任何图片。
+- [Source2Sounds/dota2](https://github.com/Source2Sounds/dota2)：可选的游戏原声下载来源，仅在你选择时下载。
 
 尚未选择开源许可证；部分代码改编自未声明许可证的 LoLPing-Mac。DotaPing 是独立项目，与 Valve 无关。Dota 2 是 Valve Corporation 的商标。

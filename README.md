@@ -2,7 +2,7 @@
 
 [简体中文](README.zh-CN.md)
 
-A small macOS menu-bar app that puts Dota 2's ping wheel on the desktop. Hold a shortcut (or ⌥-click, as in the game), point at a ping, let go, and it lands where you started with an animation and a sound. Works with a mouse or a trackpad. The interface is in English by default and can be switched to Simplified Chinese.
+A small macOS menu-bar app that puts Dota 2's ping wheel on the desktop. Hold a shortcut (or ⌥-click, as in the game), point at a ping, let go, and it lands where you started with an animation and a sound. Works with a mouse or a trackpad. The interface is in English by default and can be switched to Simplified Chinese, and the game's original ping sounds can be downloaded from inside the app.
 
 DotaPing is based on **[AllenTHT/LoLPing-Mac](https://github.com/AllenTHT/LoLPing-Mac)**, which does the same for League of Legends smart pings. The app structure, the modifier-chord gesture state machine, the overlay windows and the self-check tooling are adapted from that project. The Dota 2 ping set, icons, sounds, trackpad handling, ⌥-click trigger and bilingual interface are new.
 
@@ -49,7 +49,7 @@ The scripts call `swiftc` directly. `Package.swift` is kept for Xcode and `swift
 
 Esc or a right-click cancels. The ping lands where the wheel was opened, even when the wheel is pushed in from a screen edge. Closing the window keeps the app in the menu bar.
 
-Settings are saved automatically: trigger, player color, size, volume and language (**Language / 语言**, English by default). The app adds no login item, makes no network requests and does not record what you type.
+Settings are saved automatically: trigger, player color, size, volume, sounds and language (**Language / 语言**, English by default). The app adds no login item and does not record what you type. It makes no network requests unless you choose **Sounds → Dota 2 Original**.
 
 ### Trackpad
 
@@ -81,7 +81,8 @@ The player color can be any of the ten Radiant and Dire slot colors. The game le
 DotaPing ships **no Valve image or audio files**.
 
 - The icons are vector drawings that follow the shapes of the in-game ping icons where those could be checked: the ringed "!", the flared X, three converging arrows for On My Way, the sword, the notched shield and the ward eye. In game both ward pings use the same eye in different colors; here Friendly Ward is drawn as an outline so the two differ even before they are highlighted. The standard Caution and Assist icons are not publicly available, so Caution is a point-down warning triangle (after the game's "Caution!" seasonal ping) and Assist is a raised hand.
-- The seven sounds are synthesized at launch (`Sources/PingCore/SoundSynth.swift`); they are not the game's audio.
+- **Sounds → Built-in** (default) plays seven cues synthesized at launch (`Sources/PingCore/SoundSynth.swift`).
+- **Sounds → Dota 2 Original** downloads the game's own ping sounds (`sounds/ui/ping*.wav`) from the community archive [Source2Sounds/dota2](https://github.com/Source2Sounds/dota2), pinned to one commit and checked against SHA-256 hashes, then mixes them the way the game's sound events do: per-event volume, plus the extra layer under Warning (pitch 1.25) and Attack (pitch 0.95, 0.1 s late). The result is stored in `~/Library/Application Support/DotaPing/GameSounds/` on your Mac only; it is not part of this repository or the release. The sounds are © Valve.
 - To use your own sounds, click **Custom Sounds…** to open `~/Library/Application Support/DotaPing/Sounds/` and add files named `ping`, `ping_warning`, `ping_waypoint`, `ping_attack`, `ping_enemy_ward`, `ping_friendly_ward` or `ping_defense` (wav, mp3, m4a, aiff or caf). They apply on the next ping.
 - The landing animation is rebuilt in AppKit from the minimap ping parameters in `ping_wheel.vdata`: a ring that closes in over 0.3 s and pulses, outward pulses, the icon rising with the team chat line above it, then a fade. It is a reconstruction in the same spirit, not a frame-accurate copy.
 
@@ -91,17 +92,19 @@ DotaPing ships **no Valve image or audio files**.
 dist/DotaPing.app/Contents/MacOS/DotaPing --check-assets
 dist/DotaPing.app/Contents/MacOS/DotaPing --visual-check "$PWD/Verification/Visuals"
 dist/DotaPing.app/Contents/MacOS/DotaPing --export-sounds /tmp/dotaping-sounds
+dist/DotaPing.app/Contents/MacOS/DotaPing --install-game-sounds /tmp/dotaping-game-sounds
 ```
 
 `--visual-check` uses the app's own renderer to write wheel snapshots at 75/100/150 % (Retina and 1x), animation phases, all ten player colors, the settings window in light and dark appearance and in both languages, and a short silent demo video. It also checks that every animation changes over time, clears completely when it ends and disappears immediately when stopped. It creates no event tap, writes no preferences and does not capture the screen.
 
-`scripts/test.sh` runs 27 scenarios (226 assertions) over the gesture state machine and data: eight directions and the center zone, every key-release order, repeats, cancels, extra modifiers, drags already in progress, negative multi-display coordinates, trackpad tap-to-confirm, ⌥-click / ⌥-drag / ⌃⌥-click, swallowed releases after a cancel, both language tables, icon bounds and synthesized audio. Live global input, real trackpad gestures, external displays and full-screen apps still need checking on hardware; see [VERIFICATION.md](VERIFICATION.md).
+`scripts/test.sh` runs 29 scenarios (238 assertions) over the gesture state machine and data: eight directions and the center zone, every key-release order, repeats, cancels, extra modifiers, drags already in progress, negative multi-display coordinates, trackpad tap-to-confirm, ⌥-click / ⌥-drag / ⌃⌥-click, swallowed releases after a cancel, both language tables, icon bounds, synthesized audio, WAV encoding and the game-sound mixing. Live global input, real trackpad gestures, external displays and full-screen apps still need checking on hardware; see [VERIFICATION.md](VERIFICATION.md).
 
 ## Credits
 
 - [AllenTHT/LoLPing-Mac](https://github.com/AllenTHT/LoLPing-Mac): the project DotaPing is based on.
 - [SteamDatabase/GameTracking-Dota2](https://github.com/SteamDatabase/GameTracking-Dota2): reference for `ping_wheel.vdata`, the ping wheel stylesheet and the English localization. Only text, color values and timings were used.
 - [Liquipedia](https://liquipedia.net/dota2/): its Dota 2 image archive was a visual reference for the icon shapes. No images were copied.
+- [Source2Sounds/dota2](https://github.com/Source2Sounds/dota2): source of the optional original ping sounds, downloaded on request.
 
 No license has been chosen yet. Parts of the code are adapted from LoLPing-Mac, which does not state a license.
 

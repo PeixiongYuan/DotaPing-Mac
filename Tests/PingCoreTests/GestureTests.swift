@@ -269,6 +269,35 @@ final class GestureTests {
         XCTAssertEqual(PingKind.friendlyWard.chat(.chinese), "我们需要视野")
         XCTAssertEqual(Language(rawValue: "missing") ?? .english, .english)
     }
+    func testWAVRoundTrip() {
+        let pcm = PCM(sampleRate: 44_100, channels: [[0, 0.5, -0.5, 1], [0.25, -0.25, 0, -1]])
+        let decoded = WAV.decode(WAV.encode(pcm))
+        XCTAssertEqual(decoded?.sampleRate, 44_100)
+        XCTAssertEqual(decoded?.channels.count, 2)
+        let error = zip(Array(pcm.channels.joined()), Array((decoded?.channels ?? []).joined())).map { abs($0-$1) }.max() ?? 1
+        XCTAssertTrue(error < 0.0001)
+        XCTAssertTrue(WAV.decode(Data("not audio".utf8)) == nil)
+        XCTAssertEqual(WAV.decode(SoundSynth.wav("ping"))?.frameCount, SoundSynth.samples("ping").count)
+    }
+    func testGameSoundRecipesFollowTheSoundEvents() {
+        XCTAssertEqual(Set(GameSoundRecipe.all.map(\.output)), Set(SoundSynth.names))
+        XCTAssertEqual(GameSoundRecipe.files, ["ping.wav", "ping_attack.wav", "ping_attack_layer.wav", "ping_defense.wav",
+                                              "ping_enemy_ward.wav", "ping_need_ward.wav", "ping_warning.wav", "ping_warning_layer.wav"])
+        let ward = GameSoundRecipe.all.first { $0.output == "ping_enemy_ward" }!
+        let quiet = ward.mix(main: PCM(sampleRate: 10, channels: [[0.6, -0.6]]), layer: nil)
+        XCTAssertEqual(quiet.channels, [[0.3, -0.3]])
+        // Attack layer: 0.95 pitch, 0.1 s late, 0.5/0.6 gain, on every channel of a stereo main.
+        let attack = GameSoundRecipe.all.first { $0.output == "ping_attack" }!
+        let main = PCM(sampleRate: 100, channels: [[Float](repeating: 0, count: 5), [Float](repeating: 0, count: 5)])
+        let layer = PCM(sampleRate: 100, channels: [[Float](repeating: 0.6, count: 96)])
+        let mixed = attack.mix(main: main, layer: layer)
+        XCTAssertEqual(mixed.frameCount, 10 + Int(95/0.95) + 1)
+        XCTAssertEqual(mixed.channels[1][9], 0)
+        XCTAssertTrue(abs(mixed.channels[1][10] - 0.5) < 0.0001)
+        // Loud mixes are scaled below clipping.
+        let loud = attack.mix(main: PCM(sampleRate: 100, channels: [[1, 1]]), layer: nil)
+        XCTAssertTrue(abs((loud.channels[0].max() ?? 0) - 0.98) < 0.0001)
+    }
     func testGlyphsFitTheUnitSquare() {
         let unit = CGRect(x: 0, y: 0, width: 1, height: 1).insetBy(dx: -0.001, dy: -0.001)
         for kind in PingKind.allCases {
@@ -324,6 +353,8 @@ enum Checks {
             ("⌥ already held when enabled", test.testOptionClickAfterResetUsesHeldModifiers),
             ("Game data and player colours", test.testGameDataAndColors),
             ("Both languages complete", test.testBothLanguagesAreComplete),
+            ("WAV encode and decode", test.testWAVRoundTrip),
+            ("Game sound mixing follows the sound events", test.testGameSoundRecipesFollowTheSoundEvents),
             ("Glyphs fit the unit square", test.testGlyphsFitTheUnitSquare),
             ("Synthesised cues are short and click-free", test.testSynthesisedCuesAreShortAndClean)
         ]

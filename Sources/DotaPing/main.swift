@@ -17,6 +17,17 @@ if let index = CommandLine.arguments.firstIndex(of: "--export-sounds"), CommandL
     } catch { print("Export failed: \(error)"); exit(1) }
 }
 
+// Downloads and mixes the game sounds into the given folder, as the app does on request.
+if let index = CommandLine.arguments.firstIndex(of: "--install-game-sounds"), CommandLine.arguments.count > index+1 {
+    let folder = URL(fileURLWithPath: CommandLine.arguments[index+1])
+    let done = DispatchSemaphore(value: 0)
+    var failure: Error?
+    Task.detached { do { try await GameSounds.install(to: folder) } catch { failure = error }; done.signal() }
+    done.wait()
+    if let failure { print("Install failed: \(failure.localizedDescription)"); exit(1) }
+    print("Installed \(GameSoundRecipe.all.count) game cues: \(folder.path)"); exit(0)
+}
+
 if CommandLine.arguments.contains("--check-assets") {
     var failures: [String] = []
     for kind in PingKind.allCases {
@@ -28,6 +39,7 @@ if CommandLine.arguments.contains("--check-assets") {
         } catch { failures.append("\(kind.soundName): \(error.localizedDescription)") }
     }
     if let custom = SoundPlayer.customOverrides(), !custom.isEmpty { print("Custom sounds in use: " + custom.joined(separator: ", ")) }
+    print("Downloaded game sounds: " + (GameSounds.installed ? GameSounds.folder.path : "not installed"))
     if failures.isEmpty { print("All 9 glyphs draw and all 7 synthesised cues decode."); exit(0) }
     failures.forEach { print($0) }; exit(1)
 }

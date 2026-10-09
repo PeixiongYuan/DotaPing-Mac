@@ -1,7 +1,8 @@
 import Foundation
 
-/// Short original cues, synthesised in memory. No game audio is bundled; a
-/// user may place their own files in the custom sound folder to replace these.
+/// Short original cues, synthesised in memory. No game audio is bundled; the
+/// app can download the game's own ping sounds on request (`GameSoundRecipe`),
+/// and a user may place their own files in the custom sound folder.
 public enum SoundSynth {
     public static let sampleRate = 44_100
     public static let names = ["ping", "ping_warning", "ping_waypoint", "ping_attack", "ping_enemy_ward", "ping_friendly_ward", "ping_defense"]
@@ -84,15 +85,6 @@ public enum SoundSynth {
 
     /// 16-bit PCM mono WAV, playable by AVAudioPlayer.
     public static func wav(_ name: String) -> Data {
-        let pcm = samples(name).map { Int16(max(-1, min(1, $0)) * Float(Int16.max)) }
-        var data = Data()
-        func append<T: FixedWidthInteger>(_ value: T) { withUnsafeBytes(of: value.littleEndian) { data.append(contentsOf: $0) } }
-        let bytes = UInt32(pcm.count*2)
-        data.append(contentsOf: Array("RIFF".utf8)); append(36+bytes)
-        data.append(contentsOf: Array("WAVEfmt ".utf8)); append(UInt32(16)); append(UInt16(1)); append(UInt16(1))
-        append(UInt32(sampleRate)); append(UInt32(sampleRate*2)); append(UInt16(2)); append(UInt16(16))
-        data.append(contentsOf: Array("data".utf8)); append(bytes)
-        pcm.forEach { append($0) }
-        return data
+        WAV.encode(PCM(sampleRate: sampleRate, channels: [samples(name)]))
     }
 }

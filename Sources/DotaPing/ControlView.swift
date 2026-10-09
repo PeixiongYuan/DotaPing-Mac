@@ -42,8 +42,16 @@ struct ControlView: View {
                 }
                 Slider(value: $model.scale, in: 0.75...1.5, step: 0.05) { Text(l.pick("Size", "大小")) }
                 Slider(value: $model.volume, in: 0...1) { Text(l.pick("Volume", "音量")) }
+                Picker(l.pick("Sounds", "音效"), selection: $model.soundSet) {
+                    Text(l.pick("Built-in", "内置合成")).tag(AppModel.SoundSet.synthesized)
+                    Text(l.pick("Dota 2 Original", "Dota 2 原声")).tag(AppModel.SoundSet.game)
+                }
                 Picker(l.pick("Language", "语言"), selection: $model.language) {
                     ForEach(Language.allCases) { Text($0.name).tag($0) }
+                }
+            } footer: {
+                if let note = soundNote(l) {
+                    Text(note).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
             }
             Section(l.pick("Preview", "预览")) {
@@ -59,13 +67,26 @@ struct ControlView: View {
                     Button(l.pick("Quit", "退出")) { NSApp.terminate(nil) }
                 }
             } footer: {
-                Text(l.pick("Not affiliated with Valve. Icons and sounds are original; no game assets are included.",
-                            "非 Valve 官方产品。图标和音效为原创，不含游戏素材。"))
+                Text(l.pick("Not affiliated with Valve. No game files are bundled; original sounds are downloaded only if you choose them.",
+                            "非 Valve 官方产品。不附带任何游戏文件；仅在你选择时下载原声。"))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .frame(minWidth: 460, minHeight: 520)
+    }
+
+    private func soundNote(_ l: Language) -> String? {
+        switch model.download {
+        case .downloading:
+            return l.pick("Downloading the game's ping sounds…", "正在下载游戏信号音效…")
+        case .failed(let reason):
+            return l.pick("Couldn't download the game sounds (\(reason)). Using the built-in sounds.", "游戏音效下载失败（\(reason)），已改用内置合成音效。")
+        case .idle:
+            guard model.soundSet == .game else { return nil }
+            return l.pick("Original sounds from the \(GameSounds.archive) archive, stored on this Mac only. © Valve.",
+                          "原声来自 \(GameSounds.archive) 存档，仅保存在本机。© Valve。")
+        }
     }
 
     private func swatch(_ color: PlayerColor) -> some View {

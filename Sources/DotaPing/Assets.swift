@@ -31,8 +31,10 @@ extension PingKind {
     func tint(_ player: PlayerColor) -> NSColor { NSColor(color(for: player)) }
 }
 
-/// Plays the synthesised cues, or a same-named file from the custom folder.
+/// Plays, in order of preference: a same-named file from the custom folder,
+/// the downloaded game sound when selected, or the synthesised cue.
 final class SoundPlayer: NSObject, AVAudioPlayerDelegate {
+    var useGameSounds = false
     static let customFolder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("DotaPing/Sounds", isDirectory: true)
     static let customExtensions = ["wav", "mp3", "m4a", "aiff", "aif", "caf"]
@@ -52,9 +54,10 @@ final class SoundPlayer: NSObject, AVAudioPlayerDelegate {
     }
     func play(_ kind: PingKind, volume: Double) {
         guard volume > 0 else { return }
-        // Custom files are read on each ping, so a replaced file applies without a restart.
+        // Files are read on each ping, so a replaced file applies without a restart.
         let custom = Self.customFile(kind.soundName).flatMap { try? Data(contentsOf: $0) }
-        guard let bytes = custom ?? synthesised[kind.soundName] else { return }
+        let game = useGameSounds ? try? Data(contentsOf: GameSounds.file(kind.soundName)) : nil
+        guard let bytes = custom ?? game ?? synthesised[kind.soundName] else { return }
         // An unreadable custom file is skipped silently; the ping still shows.
         guard let player = try? AVAudioPlayer(data: bytes) else { return }
         player.volume = Float(volume)
