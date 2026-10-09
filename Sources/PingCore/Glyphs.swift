@@ -81,6 +81,15 @@ public enum Glyphs {
                 path.addPath(shield.copy(using: &inset)!)
             }
             return Glyph(path: path, evenOdd: true)
+        case .question:
+            // Bold question mark, like the game's "Question Mark?" ping: a stroked hook and stem over a dot.
+            let hook = CGMutablePath()
+            hook.addArc(center: CGPoint(x: 0.5, y: 0.66), radius: 0.215, startAngle: 155 * .pi/180, endAngle: -50 * .pi/180, clockwise: true)
+            hook.addQuadCurve(to: CGPoint(x: 0.5, y: 0.37), control: CGPoint(x: 0.5, y: 0.43))
+            hook.addLine(to: CGPoint(x: 0.5, y: 0.29))
+            path.addPath(hook.copy(strokingWithWidth: 0.135, lineCap: .round, lineJoin: .round, miterLimit: 10))
+            path.addEllipse(in: circle(0.5, 0.12, 0.078))
+            return Glyph(path: path, evenOdd: false)
         case .enemyWard:
             // Solid ward eye, like the Observer Ward map icon.
             path.addPath(almond(left: 0.02, right: 0.98, y: 0.5, lift: 0.58))

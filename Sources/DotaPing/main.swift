@@ -34,7 +34,7 @@ if CommandLine.arguments.contains("--check-assets") {
         }
         print("game \(recipe.output): \(String(format: "%.2f", player.duration))s")
     }
-    if failures.isEmpty { print("All 9 glyphs draw; all 7 game and 7 synthesised cues decode."); exit(0) }
+    if failures.isEmpty { print("All \(PingKind.allCases.count) glyphs draw; all 7 game and 7 synthesised cues decode."); exit(0) }
     failures.forEach { print($0) }; exit(1)
 }
 

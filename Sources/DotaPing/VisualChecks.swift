@@ -38,15 +38,15 @@ enum VisualChecks {
         _ = NSApplication.shared
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try checkEffectLifecycle()
-        let order = PingKind.wheel + [.regular]
+        let order = PingKind.wheel + [.regular], rows = (order.count+2)/3
         for scale in [0.75, 1.0, 1.5] {
             let side = CGFloat(300*scale), spacing = CGFloat(16)
-            let rep = bitmap(size: CGSize(width: side*3+spacing*4, height: side*3+spacing*4)) {
+            let rep = bitmap(size: CGSize(width: side*3+spacing*4, height: side*CGFloat(rows)+spacing*CGFloat(rows+1))) {
                 for (index, kind) in order.enumerated() {
                     let view = WheelView(frame: CGRect(x: 0, y: 0, width: side, height: side))
-                    let angle: CGFloat? = kind == .regular ? nil : CGFloat(PingKind.wheel.firstIndex(of: kind)!) * .pi/4
+                    let angle: CGFloat? = kind == .regular ? nil : CGFloat(PingKind.wheel.firstIndex(of: kind)!) * WheelGeometry.sector
                     view.setSelection(kind, angle: angle, animated: false)
-                    draw(view, at: CGPoint(x: spacing+CGFloat(index%3)*(side+spacing), y: spacing+CGFloat(2-index/3)*(side+spacing)))
+                    draw(view, at: CGPoint(x: spacing+CGFloat(index%3)*(side+spacing), y: spacing+CGFloat(rows-1-index/3)*(side+spacing)))
                 }
             }
             try save(rep, to: directory.appendingPathComponent("wheel-\(Int(scale*100))-retina.png"))
@@ -55,15 +55,15 @@ enum VisualChecks {
         // uses a Dire player colour.
         let view = WheelView(frame: CGRect(x: 0, y: 0, width: 300, height: 300))
         view.player = .pink
-        view.setSelection(.attack, angle: .pi/4, animated: false)
+        view.setSelection(.attack, angle: WheelGeometry.sector, animated: false)
         try save(bitmap(size: CGSize(width: 300, height: 300), pixelScale: 1) { draw(view, at: .zero) }, to: directory.appendingPathComponent("wheel-100-1x.png"))
         let times = [0.06, 0.2, 0.45, 1.2, 1.8, 2.6]
-        let phases = bitmap(size: CGSize(width: 200*CGFloat(times.count), height: 200*9)) {
+        let phases = bitmap(size: CGSize(width: 200*CGFloat(times.count), height: 200*CGFloat(order.count))) {
             for (row, kind) in order.enumerated() {
                 for (column, time) in times.enumerated() {
                     let effect = PingEffectView(frame: CGRect(x: 0, y: 0, width: 200, height: 200), kind: kind, player: .blue, language: .english, scale: 1)
                     effect.seek(to: time)
-                    draw(effect, at: CGPoint(x: column*200, y: (8-row)*200))
+                    draw(effect, at: CGPoint(x: column*200, y: (order.count-1-row)*200))
                 }
             }
         }
@@ -85,7 +85,7 @@ enum VisualChecks {
             let suffix = language == .english ? "" : "-zh"
             let single = WheelView(frame: CGRect(x: 0, y: 0, width: 300, height: 300))
             single.language = language
-            single.setSelection(.enemyWard, angle: -.pi/4, animated: false)
+            single.setSelection(.enemyWard, angle: CGFloat(PingKind.wheel.firstIndex(of: .enemyWard)!) * WheelGeometry.sector, animated: false)
             try save(bitmap(size: CGSize(width: 300, height: 300)) { draw(single, at: .zero) }, to: directory.appendingPathComponent("readme-wheel\(suffix).png"))
             let landed = bitmap(size: CGSize(width: 160*5, height: 170)) {
                 for (index, kind) in [PingKind.regular, .caution, .attack, .enemyWard, .friendlyWard].enumerated() {
@@ -105,7 +105,7 @@ enum VisualChecks {
         defaults.register(defaults: ["trigger": trigger.rawValue, "language": language.rawValue, "playerColor": PlayerColor.blue.rawValue, "volume": 0.55, "effectScale": 1.0])
         let model = AppModel(defaults: defaults)
         let host = NSHostingView(rootView: ControlView(model: model))
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 480, height: 780), styleMask: [.borderless], backing: .buffered, defer: false)
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 480, height: 840), styleMask: [.borderless], backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: appearance)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
@@ -134,7 +134,7 @@ enum VisualChecks {
                 throw NSError(domain: "VisualChecks", code: 4, userInfo: [NSLocalizedDescriptionKey: "Animation/stop check failed: \(kind.title(.english))"])
             }
         }
-        print("PASS 9 effects: visible animation changes, finish clean and stop immediately (36 pixel comparisons).")
+        print("PASS \(PingKind.allCases.count) effects: visible animation changes, finish clean and stop immediately (\(PingKind.allCases.count*4) pixel comparisons).")
     }
     private static func movie(to url: URL) throws {
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
@@ -153,8 +153,8 @@ enum VisualChecks {
             let rep = bitmap(size: size, pixelScale: 1) {
                 if t < 7 {
                     let segment = max(-1, Int((t-0.6)/0.65))
-                    let kind: PingKind = t < 0.6 ? .regular : (segment < 8 ? PingKind.wheel[segment] : .regular)
-                    let angle: CGFloat? = kind == .regular ? nil : CGFloat(segment) * .pi/4 + CGFloat(sin(t*7))*0.15
+                    let kind: PingKind = t < 0.6 ? .regular : (segment < PingKind.wheel.count ? PingKind.wheel[segment] : .regular)
+                    let angle: CGFloat? = kind == .regular ? nil : CGFloat(segment) * WheelGeometry.sector + CGFloat(sin(t*7))*0.15
                     if segment != previous { wheel.setSelection(wheel.selected, angle: wheel.direction, animated: false); previous = segment }
                     wheel.setSelection(kind, angle: angle)
                     wheel.sampleTransition(elapsed: t < 0.6 ? 1 : (t-0.6).truncatingRemainder(dividingBy: 0.65))
@@ -163,11 +163,11 @@ enum VisualChecks {
                 } else {
                     let age = (t-7).truncatingRemainder(dividingBy: 2.5)
                     for (index, kind) in order.enumerated() {
-                        let effect = PingEffectView(frame: CGRect(x: 0, y: 0, width: 240, height: 200), kind: kind, player: .blue, language: .english, scale: 1.1)
+                        let effect = PingEffectView(frame: CGRect(x: 0, y: 0, width: 192, height: 240), kind: kind, player: .blue, language: .english, scale: 1)
                         effect.seek(to: age)
-                        draw(effect, at: CGPoint(x: 120+(index%3)*240, y: 65+(2-index/3)*205))
+                        draw(effect, at: CGPoint(x: (index%5)*192, y: 90+(1-index/5)*270))
                     }
-                    caption("Nine pings: closing ring, pulses, rising icon, chat line", center: CGPoint(x: 480, y: 35))
+                    caption("Ten pings: closing ring, pulses, rising icon, chat line", center: CGPoint(x: 480, y: 35))
                 }
             }
             while !input.isReadyForMoreMediaData { RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.005)) }

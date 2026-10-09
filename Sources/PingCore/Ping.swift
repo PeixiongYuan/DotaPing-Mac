@@ -10,12 +10,13 @@ public enum Language: String, CaseIterable, Identifiable {
     public func pick(_ english: String, _ chinese: String) -> String { self == .english ? english : chinese }
 }
 
-/// The default entries of Dota 2's ping wheel (`scripts/ping_wheel.vdata`).
+/// The default entries of Dota 2's ping wheel (`scripts/ping_wheel.vdata`),
+/// plus the game's "Question Mark?" seasonal ping.
 public enum PingKind: String, CaseIterable, Identifiable {
-    case caution, attack, onMyWay, warning, assist, friendlyWard, defend, enemyWard, regular
+    case caution, attack, onMyWay, warning, assist, friendlyWard, defend, enemyWard, question, regular
     public var id: String { rawValue }
     /// Clockwise from north. The centre is the ordinary ping.
-    public static let wheel: [PingKind] = [.caution, .attack, .onMyWay, .warning, .assist, .friendlyWard, .defend, .enemyWard]
+    public static let wheel: [PingKind] = [.caution, .attack, .onMyWay, .warning, .assist, .friendlyWard, .defend, .enemyWard, .question]
     /// Wheel label: the game's `dota_pingwheel_*` string.
     public func title(_ language: Language) -> String {
         switch self {
@@ -27,11 +28,12 @@ public enum PingKind: String, CaseIterable, Identifiable {
         case .friendlyWard: return language.pick("Friendly Ward", "友方守卫")
         case .defend: return language.pick("Defend", "防守")
         case .enemyWard: return language.pick("Enemy Ward", "敌方守卫")
+        case .question: return language.pick("Question Mark", "问号")
         case .regular: return language.pick("Ping", "信号")
         }
     }
     /// Team chat line: the game's `DOTA_Chat_Ping_Msg_*` text, without icon and location.
-    /// The ordinary and warning pings post no chat message in game.
+    /// The ordinary, warning and seasonal pings post no chat message in game.
     public func chat(_ language: Language) -> String? {
         switch self {
         case .caution: return language.pick("Caution", "小心")
@@ -41,13 +43,14 @@ public enum PingKind: String, CaseIterable, Identifiable {
         case .friendlyWard: return language.pick("We Need Vision", "我们需要视野")
         case .defend: return language.pick("Defend", "防守")
         case .enemyWard: return language.pick("Enemy Has Vision", "敌人有视野")
-        case .warning, .regular: return nil
+        case .warning, .question, .regular: return nil
         }
     }
     /// One cue per game sound event; several pings share an event, as in game.
+    /// The seasonal Question Mark has no event of its own and uses the ordinary one.
     public var soundName: String {
         switch self {
-        case .regular, .assist: return "ping"
+        case .regular, .assist, .question: return "ping"
         case .warning, .caution: return "ping_warning"
         case .onMyWay: return "ping_waypoint"
         case .attack: return "ping_attack"
@@ -160,6 +163,8 @@ public enum Trigger: String, CaseIterable, Identifiable {
 }
 
 public enum WheelGeometry {
+    /// Angular width of one wheel slot.
+    public static let sector: CGFloat = 2 * .pi / CGFloat(PingKind.wheel.count)
     public static let centerRadius: CGFloat = 66
     public static let iconRadius: CGFloat = 102
     public static let outerRadius: CGFloat = 140
@@ -174,9 +179,9 @@ public enum WheelGeometry {
     public static func selection(at point: CGPoint, center: CGPoint, deadZone: CGFloat) -> PingKind {
         let dx = point.x - center.x, dy = point.y - center.y
         guard hypot(dx, dy) > deadZone else { return .regular }
-        let clockwiseFromNorth = atan2(dx, dy)
-        let index = Int(floor((clockwiseFromNorth + .pi / 8) / (.pi / 4)))
-        return PingKind.wheel[(index % 8 + 8) % 8]
+        let clockwiseFromNorth = atan2(dx, dy), count = PingKind.wheel.count
+        let index = Int(floor((clockwiseFromNorth + sector / 2) / sector))
+        return PingKind.wheel[(index % count + count) % count]
     }
 
     public static func clampedCenter(anchor: CGPoint, frame: CGRect, radius: CGFloat) -> CGPoint {

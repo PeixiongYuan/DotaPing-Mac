@@ -23,7 +23,7 @@ Apple Silicon Mac with macOS 13 or later.
 
 ## Install
 
-Download `DotaPing-v1.1.0-macOS-arm64.zip` from [Releases](https://github.com/PeixiongYuan/DotaPing-Mac/releases), unzip it and move `DotaPing.app` to Applications.
+Download `DotaPing-v1.2.0-macOS-arm64.zip` from [Releases](https://github.com/PeixiongYuan/DotaPing-Mac/releases), unzip it and move `DotaPing.app` to Applications.
 
 The app is ad-hoc signed, not notarized. If macOS refuses to open it, try once, then go to **System Settings → Privacy & Security** and choose **Open Anyway**.
 
@@ -60,25 +60,26 @@ Settings are saved automatically: trigger, player color, size, volume, sounds an
 
 ## Pings
 
-Clockwise from the top, with the ordinary Ping in the center. Names, team chat lines, fixed colors and sound grouping come from the game's `scripts/ping_wheel.vdata` and its English and Simplified Chinese localization.
+Nine slots of 40°, clockwise from the top, with the ordinary Ping in the center. Names, team chat lines, fixed colors and sound grouping come from the game's `scripts/ping_wheel.vdata` and its English and Simplified Chinese localization.
 
-| Position | Ping | Chat line | 简体中文 | Color | Game sound event |
+| Slot | Ping | Chat line | 简体中文 | Color | Game sound event |
 | --- | --- | --- | --- | --- | --- |
 | Top | Caution | Caution | 小心 | fixed orange | General.PingWarning |
-| Top right | Attack | Attack | 进攻 | player color | General.PingAttack |
-| Right | On My Way | On My Way | 我马上到 | player color | General.PingWaypoint |
-| Bottom right | Warning | — | 警告 | player color | General.PingWarning |
-| Bottom | Assist | Assist | 援助 | player color | General.Ping |
-| Bottom left | Friendly Ward | We Need Vision | 友方守卫 | fixed green | General.PingFriendlyWard |
-| Left | Defend | Defend | 防守 | player color | General.PingDefense |
-| Top left | Enemy Ward | Enemy Has Vision | 敌方守卫 | fixed red | General.PingEnemyWard |
+| 40° | Attack | Attack | 进攻 | player color | General.PingAttack |
+| 80° | On My Way | On My Way | 我马上到 | player color | General.PingWaypoint |
+| 120° | Warning | — | 警告 | player color | General.PingWarning |
+| 160° | Assist | Assist | 援助 | player color | General.Ping |
+| 200° | Friendly Ward | We Need Vision | 友方守卫 | fixed green | General.PingFriendlyWard |
+| 240° | Defend | Defend | 防守 | player color | General.PingDefense |
+| 280° | Enemy Ward | Enemy Has Vision | 敌方守卫 | fixed red | General.PingEnemyWard |
+| 320° | Question Mark | — | 问号 | player color | General.Ping |
 | Center | Ping | — | 信号 | player color | General.Ping |
 
-The player color can be any of the ten Radiant and Dire slot colors. The game lets players rearrange the wheel; the positions above follow LoLPing's layout and may differ from the in-game default. The Heart ping is not included.
+The player color can be any of the ten Radiant and Dire slot colors. Question Mark is the game's "Question Mark?" seasonal ping; it has no sound event or chat line of its own, so it uses the ordinary ping sound. The game lets players rearrange the wheel; the order above follows LoLPing's layout, with Question Mark added last, and may differ from the in-game default. The Heart ping is not included.
 
 ## Icons and sound
 
-- The icons are vector drawings that follow the shapes of the in-game ping icons where those could be checked: the ringed "!", the flared X, three converging arrows for On My Way, the sword, the notched shield and the ward eye. In game both ward pings use the same eye in different colors; here Friendly Ward is drawn as an outline so the two differ even before they are highlighted. The standard Caution and Assist icons are not publicly available, so Caution is a point-down warning triangle (after the game's "Caution!" seasonal ping) and Assist is a raised hand.
+- The icons are vector drawings that follow the shapes of the in-game ping icons where those could be checked: the ringed "!", the flared X, three converging arrows for On My Way, the sword, the notched shield, the ward eye and the bold question mark. In game both ward pings use the same eye in different colors; here Friendly Ward is drawn as an outline so the two differ even before they are highlighted. The standard Caution and Assist icons are not publicly available, so Caution is a point-down warning triangle (after the game's "Caution!" seasonal ping) and Assist is a raised hand.
 - **Sounds → Dota 2** (default) plays the game's own ping sounds. The eight files from the game's `sounds/ui/` folder are bundled unmodified in `Resources/Sounds/`, taken from the community archive [Source2Sounds/dota2](https://github.com/Source2Sounds/dota2) at a pinned commit; `Resources/asset-sources.json` records their sources and SHA-256 hashes, and `scripts/fetch_sounds.py` can restore them. At launch DotaPing mixes them the way the game's sound events do: per-event volume, plus the extra layer under Warning (pitch 1.25) and Attack (pitch 0.95, 0.1 s late). **These sound files are © Valve Corporation** and are included, as in LoLPing-Mac, for this fan-made tool only.
 - **Sounds → Synthesized** plays seven cues generated at launch instead (`Sources/PingCore/SoundSynth.swift`).
 - To use your own sounds, click **Custom Sounds…** to open `~/Library/Application Support/DotaPing/Sounds/` and add files named `ping`, `ping_warning`, `ping_waypoint`, `ping_attack`, `ping_enemy_ward`, `ping_friendly_ward` or `ping_defense` (wav, mp3, m4a, aiff or caf). They apply on the next ping.
@@ -94,7 +95,7 @@ dist/DotaPing.app/Contents/MacOS/DotaPing --export-sounds /tmp/dotaping-sounds
 
 `--visual-check` uses the app's own renderer to write wheel snapshots at 75/100/150 % (Retina and 1x), animation phases, all ten player colors, the settings window in light and dark appearance and in both languages, and a short silent demo video. It also checks that every animation changes over time, clears completely when it ends and disappears immediately when stopped. It creates no event tap, writes no preferences and does not capture the screen.
 
-`scripts/test.sh` runs 30 scenarios (255 assertions) over the gesture state machine and data: eight directions and the center zone, every key-release order, repeats, cancels, extra modifiers, drags already in progress, negative multi-display coordinates, trackpad tap-to-confirm, ⌥-click / ⌥-drag / ⌃⌥-click, swallowed releases after a cancel, both language tables, icon bounds, synthesized audio, WAV encoding, the game-sound mixing and the bundled files' checksums. Live global input, real trackpad gestures, external displays and full-screen apps still need checking on hardware; see [VERIFICATION.md](VERIFICATION.md).
+`scripts/test.sh` runs 30 scenarios (277 assertions) over the gesture state machine and data: every wheel slot and the center zone, every key-release order, repeats, cancels, extra modifiers, drags already in progress, negative multi-display coordinates, trackpad tap-to-confirm, ⌥-click / ⌥-drag / ⌃⌥-click, swallowed releases after a cancel, both language tables, icon bounds, synthesized audio, WAV encoding, the game-sound mixing and the bundled files' checksums. Live global input, real trackpad gestures, external displays and full-screen apps still need checking on hardware; see [VERIFICATION.md](VERIFICATION.md).
 
 ## Credits
 

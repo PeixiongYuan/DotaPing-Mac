@@ -31,11 +31,15 @@ final class GestureTests {
 
     // MARK: Chord triggers
 
-    func testEightDirectionsAndCentralDeadZone() {
-        let vectors: [CGPoint] = [.init(x: 0,y: 100), .init(x: 100,y: 100), .init(x: 100,y: 0), .init(x: 100,y: -100),
-                                  .init(x: 0,y: -100), .init(x: -100,y: -100), .init(x: -100,y: 0), .init(x: -100,y: 100)]
-        for (index, vector) in vectors.enumerated() {
-            XCTAssertEqual(WheelGeometry.selection(at: vector, center: .zero, deadZone: WheelGeometry.centerRadius), PingKind.wheel[index])
+    func testEveryDirectionAndCentralDeadZone() {
+        XCTAssertEqual(PingKind.wheel.count, 9)
+        for (index, kind) in PingKind.wheel.enumerated() {
+            // Slot centre and both inner edges, clockwise from north.
+            for offset in [0, -WheelGeometry.sector/2 + 0.01, WheelGeometry.sector/2 - 0.01] {
+                let theta = CGFloat(index)*WheelGeometry.sector + offset
+                let point = CGPoint(x: 100*sin(theta), y: 100*cos(theta))
+                XCTAssertEqual(WheelGeometry.selection(at: point, center: .zero, deadZone: WheelGeometry.centerRadius), kind)
+            }
         }
         XCTAssertEqual(WheelGeometry.selection(at: CGPoint(x: 66, y: 0), center: .zero, deadZone: WheelGeometry.centerRadius), .regular)
         XCTAssertEqual(WheelGeometry.selection(at: CGPoint(x: 67, y: 0), center: .zero, deadZone: WheelGeometry.centerRadius), .onMyWay)
@@ -48,8 +52,9 @@ final class GestureTests {
     }
     func testReleaseCommitsExactlyOnceAtOriginalAnchor() {
         let machine = GestureMachine(); open(machine)
-        XCTAssertEqual(machine.moved(to: CGPoint(x: 500, y: 400)), [.hover(.defend, angle: -.pi/2)])
-        XCTAssertEqual(machine.flagsChanged([.control, .option], at: .zero, otherInputHeld: false), [.dismiss, .commit(.defend, anchor)])
+        // Due west lies in the Enemy Ward slot (260°–300°).
+        XCTAssertEqual(machine.moved(to: CGPoint(x: 500, y: 400)), [.hover(.enemyWard, angle: -.pi/2)])
+        XCTAssertEqual(machine.flagsChanged([.control, .option], at: .zero, otherInputHeld: false), [.dismiss, .commit(.enemyWard, anchor)])
         XCTAssertEqual(machine.flagsChanged([.option], at: .zero, otherInputHeld: false), [])
         XCTAssertEqual(machine.flagsChanged([], at: .zero, otherInputHeld: false), [])
         XCTAssertEqual(machine.phase, .idle)
@@ -121,9 +126,9 @@ final class GestureTests {
     func testMovementDuringArmingAppliedAfterWheelOpens() {
         let machine = GestureMachine()
         _ = machine.flagsChanged(chord, at: anchor, otherInputHeld: false)
-        _ = machine.moved(to: CGPoint(x: 600, y: 300))
+        _ = machine.moved(to: CGPoint(x: 620, y: 300))
         _ = machine.delayElapsed()
-        XCTAssertEqual(machine.setWheelCenter(anchor), [.hover(.assist, angle: .pi)])
+        XCTAssertEqual(machine.setWheelCenter(anchor), [.hover(.assist, angle: atan2(20, -100))])
     }
     func testEveryChordTrigger() {
         for trigger in Trigger.allCases where !trigger.usesPrimaryButton {
@@ -197,11 +202,11 @@ final class GestureTests {
         XCTAssertEqual(machine.delayElapsed(), [.show(anchor)])
         XCTAssertEqual(machine.setWheelCenter(anchor), [])
         // Physical trackpad press, three-finger drag and mouse drags all arrive as primary drags.
-        XCTAssertEqual(machine.primaryDragged(to: CGPoint(x: 600, y: 300)), Response([.hover(.assist, angle: .pi)], consume: true))
+        XCTAssertEqual(machine.primaryDragged(to: CGPoint(x: 620, y: 300)), Response([.hover(.assist, angle: atan2(20, -100))], consume: true))
         // Letting go of Option first keeps the wheel open; the button decides.
         XCTAssertEqual(machine.flagsChanged([], at: anchor, otherInputHeld: false), [])
-        XCTAssertEqual(machine.primaryDragged(to: CGPoint(x: 520, y: 320)), Response([.hover(.friendlyWard, angle: atan2(-80, -80))], consume: true))
-        XCTAssertEqual(machine.primaryUp(at: CGPoint(x: 520, y: 320)), Response([.dismiss, .commit(.friendlyWard, anchor)], consume: true))
+        XCTAssertEqual(machine.primaryDragged(to: CGPoint(x: 520, y: 320)), Response([.hover(.defend, angle: atan2(-80, -80))], consume: true))
+        XCTAssertEqual(machine.primaryUp(at: CGPoint(x: 520, y: 320)), Response([.dismiss, .commit(.defend, anchor)], consume: true))
         XCTAssertEqual(machine.primaryUp(at: anchor), Response())
     }
     func testControlOptionClickSendsWarningOnce() {
@@ -246,8 +251,8 @@ final class GestureTests {
     // MARK: Data, artwork and audio
 
     func testGameDataAndColors() {
-        XCTAssertEqual(PingKind.wheel.count, 8)
-        XCTAssertEqual(Set(PingKind.wheel).count, 8)
+        XCTAssertEqual(PingKind.wheel.count, 9)
+        XCTAssertEqual(Set(PingKind.wheel).count, 9)
         XCTAssertTrue(!PingKind.wheel.contains(.regular))
         XCTAssertEqual(PingKind.caution.fixedColor, RGB(255, 155, 14))
         XCTAssertEqual(PingKind.enemyWard.color(for: .pink), RGB(225, 51, 51))
@@ -259,9 +264,9 @@ final class GestureTests {
     func testBothLanguagesAreComplete() {
         // English names are the game's dota_pingwheel_* strings.
         XCTAssertEqual(PingKind.wheel.map { $0.title(.english) },
-                       ["Caution", "Attack", "On My Way", "Warning", "Assist", "Friendly Ward", "Defend", "Enemy Ward"])
+                       ["Caution", "Attack", "On My Way", "Warning", "Assist", "Friendly Ward", "Defend", "Enemy Ward", "Question Mark"])
         for language in Language.allCases {
-            XCTAssertEqual(Set(PingKind.allCases.map { $0.title(language) }).count, 9)
+            XCTAssertEqual(Set(PingKind.allCases.map { $0.title(language) }).count, 10)
             XCTAssertEqual(PingKind.allCases.compactMap { $0.chat(language) }.count, 7)
             XCTAssertEqual(Set(PlayerColor.allCases.map { $0.title(language) }).count, 10)
             XCTAssertEqual(Set(Trigger.allCases.map { $0.title(language) }).count, 4)
@@ -351,7 +356,7 @@ enum Checks {
     static func main() {
         let test = GestureTests()
         let scenarios: [(String, () -> Void)] = [
-            ("Eight directions and centre zone", test.testEightDirectionsAndCentralDeadZone),
+            ("Every direction and centre zone", test.testEveryDirectionAndCentralDeadZone),
             ("Short press never pings", test.testShortPressNeverPingsAndLateTimerDoesNothing),
             ("Sends once at the original anchor", test.testReleaseCommitsExactlyOnceAtOriginalAnchor),
             ("Every key-release order", test.testAllReleaseOrdersCommitExactlyOnce),

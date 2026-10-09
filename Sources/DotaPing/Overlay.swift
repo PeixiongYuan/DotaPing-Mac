@@ -35,8 +35,8 @@ final class WheelView: NSView {
     private(set) var direction: CGFloat?
     var player: PlayerColor = .blue { didSet { needsDisplay = true } }
     var language: Language = .english { didSet { needsDisplay = true } }
-    private var weights = Array(repeating: 0.0, count: 8)
-    private var origins = Array(repeating: 0.0, count: 8)
+    private var weights = Array(repeating: 0.0, count: PingKind.wheel.count)
+    private var origins = Array(repeating: 0.0, count: PingKind.wheel.count)
     private var transitionStart: CFTimeInterval = 0
     private var openingStart: CFTimeInterval?
     private var timer: Timer?
@@ -104,20 +104,21 @@ final class WheelView: NSView {
         NSColor(srgbRed: 0.055, green: 0.06, blue: 0.068, alpha: 0.86).setFill(); disk.fill()
         NSColor(white: 1, alpha: 0.12).setStroke(); disk.lineWidth = 1*s; disk.stroke()
 
+        let step = 360/CGFloat(PingKind.wheel.count), half = step/2
         for (index, kind) in PingKind.wheel.enumerated() {
-            let degrees = CGFloat(90-index*45), theta = degrees * .pi/180
+            let degrees = 90-CGFloat(index)*step, theta = degrees * .pi/180
             let weight = weights[index], tint = kind.tint(player)
             if weight > 0.001 {
                 let sector = NSBezierPath()
-                sector.appendArc(withCenter: c, radius: outer-0.5*s, startAngle: degrees+22.5, endAngle: degrees-22.5, clockwise: true)
-                sector.appendArc(withCenter: c, radius: inner, startAngle: degrees-22.5, endAngle: degrees+22.5, clockwise: false)
+                sector.appendArc(withCenter: c, radius: outer-0.5*s, startAngle: degrees+half, endAngle: degrees-half, clockwise: true)
+                sector.appendArc(withCenter: c, radius: inner, startAngle: degrees-half, endAngle: degrees+half, clockwise: false)
                 sector.close()
                 tint.withAlphaComponent(0.20*weight).setFill(); sector.fill()
                 let rim = NSBezierPath()
-                rim.appendArc(withCenter: c, radius: outer-1.8*s, startAngle: degrees-22.5, endAngle: degrees+22.5)
+                rim.appendArc(withCenter: c, radius: outer-1.8*s, startAngle: degrees-half, endAngle: degrees+half)
                 tint.withAlphaComponent(weight).setStroke(); rim.lineWidth = 2.6*s; rim.stroke()
             }
-            let boundary = (degrees+22.5) * .pi/180
+            let boundary = (degrees+half) * .pi/180
             let divider = NSBezierPath()
             divider.move(to: CGPoint(x: c.x+cos(boundary)*inner, y: c.y+sin(boundary)*inner))
             divider.line(to: CGPoint(x: c.x+cos(boundary)*outer, y: c.y+sin(boundary)*outer))

@@ -18,7 +18,7 @@
 
 需要 Apple Silicon Mac、macOS 13 或更新版本。
 
-从 [Releases](https://github.com/PeixiongYuan/DotaPing-Mac/releases) 下载 `DotaPing-v1.1.0-macOS-arm64.zip`，解压后把 `DotaPing.app` 拖进「应用程序」。应用是本地签名、未公证；若系统拒绝打开，先尝试打开一次，再到 **系统设置 → 隐私与安全性** 点 **仍要打开**。
+从 [Releases](https://github.com/PeixiongYuan/DotaPing-Mac/releases) 下载 `DotaPing-v1.2.0-macOS-arm64.zip`，解压后把 `DotaPing.app` 拖进「应用程序」。应用是本地签名、未公证；若系统拒绝打开，先尝试打开一次，再到 **系统设置 → 隐私与安全性** 点 **仍要打开**。
 
 界面默认是英文：在设置窗口的 **Language** 一栏选「简体中文」即可切换，立即生效。然后打开「启用 DotaPing」，并在 **系统设置 → 隐私与安全性 → 辅助功能** 中允许 DotaPing。窗口内预览不需要权限。
 
@@ -51,25 +51,26 @@ Esc 或右键取消。信号落在打开轮盘的位置；轮盘贴近屏幕边�
 
 ## 信号
 
-顺时针，从正上方开始；中心为普通信号。名称、队伍文字、固定颜色和音效分组取自游戏的 `scripts/ping_wheel.vdata` 与中英文本地化文件。
+共 9 格，每格 40°，从正上方开始顺时针排列；中心为普通信号。名称、队伍文字、固定颜色和音效分组取自游戏的 `scripts/ping_wheel.vdata` 与中英文本地化文件。
 
 | 位置 | 信号 | 队伍文字 | English | 颜色 |
 | --- | --- | --- | --- | --- |
-| 上 | 小心 | 小心 | Caution | 固定橙色 |
-| 右上 | 进攻 | 攻击 | Attack | 玩家颜色 |
-| 右 | 我马上到 | 前往 | On My Way | 玩家颜色 |
-| 右下 | 警告 | — | Warning | 玩家颜色 |
-| 下 | 援助 | 援助 | Assist | 玩家颜色 |
-| 左下 | 友方守卫 | 我们需要视野 | Friendly Ward | 固定绿色 |
-| 左 | 防守 | 防守 | Defend | 玩家颜色 |
-| 左上 | 敌方守卫 | 敌人有视野 | Enemy Ward | 固定红色 |
+| 正上 | 小心 | 小心 | Caution | 固定橙色 |
+| 40° | 进攻 | 攻击 | Attack | 玩家颜色 |
+| 80° | 我马上到 | 前往 | On My Way | 玩家颜色 |
+| 120° | 警告 | — | Warning | 玩家颜色 |
+| 160° | 援助 | 援助 | Assist | 玩家颜色 |
+| 200° | 友方守卫 | 我们需要视野 | Friendly Ward | 固定绿色 |
+| 240° | 防守 | 防守 | Defend | 玩家颜色 |
+| 280° | 敌方守卫 | 敌人有视野 | Enemy Ward | 固定红色 |
+| 320° | 问号 | — | Question Mark | 玩家颜色 |
 | 中心 | 信号 | — | Ping | 玩家颜色 |
 
-玩家颜色可选天辉 / 夜魇共十个位置。游戏允许自定义轮盘排列；上表沿用 LoLPing 的方位，未核实与游戏默认排列一致。没有加入「爱心」信号。
+玩家颜色可选天辉 / 夜魇共十个位置。「问号」是游戏里的「问号？」赛季信号，没有单独的音效和队伍文字，因此使用普通信号音。游戏允许自定义轮盘排列；上表沿用 LoLPing 的方位并在最后加入问号，未核实与游戏默认排列一致。没有加入「爱心」信号。
 
 ## 图标与音效
 
-- 图标是矢量重画，能核对到原版的都照原版造型：圆环「!」、两端张开的 X、三箭头汇聚的「我马上到」、剑、顶边带凹口的盾、守卫眼睛。游戏里敌我守卫共用同一个眼睛、只靠颜色区分；这里友方守卫画成描边眼睛，未高亮时也能分清。「小心」和「援助」的标准原版图标找不到公开来源，分别画成倒三角警示（参照游戏的「Caution!」赛季信号）和举起的手。
+- 图标是矢量重画，能核对到原版的都照原版造型：圆环「!」、两端张开的 X、三箭头汇聚的「我马上到」、剑、顶边带凹口的盾、守卫眼睛、粗体问号。游戏里敌我守卫共用同一个眼睛、只靠颜色区分；这里友方守卫画成描边眼睛，未高亮时也能分清。「小心」和「援助」的标准原版图标找不到公开来源，分别画成倒三角警示（参照游戏的「Caution!」赛季信号）和举起的手。
 - **音效 → Dota 2 原声**（默认）：播放游戏自带的信号音效。游戏 `sounds/ui/` 下的 8 个原始文件未经修改内置在 `Resources/Sounds/`，取自社区存档 [Source2Sounds/dota2](https://github.com/Source2Sounds/dota2) 的固定提交；`Resources/asset-sources.json` 记录了来源和 SHA-256，`scripts/fetch_sounds.py` 可重新获取。启动时按游戏音效事件的参数混音：各信号音量不同，警告叠加一层升调 1.25 倍的音，进攻叠加一层降调 0.95 倍、延迟 0.1 秒的音。**这些音效文件版权归 Valve Corporation 所有**，与 LoLPing-Mac 一样仅为这个同人小工具而附带。
 - **音效 → 合成音效**：改用启动时程序合成的七种提示音（`Sources/PingCore/SoundSynth.swift`）。
 - 点「自定义音效…」可打开 `~/Library/Application Support/DotaPing/Sounds/`，放入同名文件（`ping`、`ping_warning`、`ping_waypoint`、`ping_attack`、`ping_enemy_ward`、`ping_friendly_ward`、`ping_defense`，wav / mp3 / m4a / aiff / caf）即可替换，下一次信号生效。
