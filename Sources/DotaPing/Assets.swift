@@ -1,0 +1,72 @@
+import AppKit
+import AVFoundation
+import PingCore
+
+enum Assets {
+    static func path(_ kind: PingKind, in rect: CGRect) -> CGPath? {
+        var transform = CGAffineTransform(a: rect.width, b: 0, c: 0, d: rect.height, tx: rect.minX, ty: rect.minY)
+        return Glyphs.glyph(kind).path.copy(using: &transform)
+    }
+    static func draw(_ kind: PingKind, in rect: CGRect, color: NSColor) {
+        guard let context = NSGraphicsContext.current?.cgContext, let path = path(kind, in: rect) else { return }
+        context.saveGState()
+        context.setFillColor(color.cgColor)
+        context.addPath(path); context.drawPath(using: Glyphs.glyph(kind).evenOdd ? .eoFill : .fill)
+        context.restoreGState()
+    }
+    static func icon(_ kind: PingKind, color: NSColor) -> NSImage {
+        NSImage(size: NSSize(width: 64, height: 64), flipped: false) { rect in
+            draw(kind, in: rect.insetBy(dx: 2, dy: 2), color: color); return true
+        }
+    }
+}
+
+extension NSColor {
+    convenience init(_ rgb: RGB, alpha: CGFloat = 1) {
+        self.init(srgbRed: rgb.red, green: rgb.green, blue: rgb.blue, alpha: alpha)
+    }
+}
+
+extension PingKind {
+    func tint(_ player: PlayerColor) -> NSColor { NSColor(color(for: player)) }
+}
+
+/// Plays the synthesised cues, or a same-named file from the custom folder.
+final class SoundPlayer: NSObject, AVAudioPlayerDelegate {
+    static let customFolder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("DotaPing/Sounds", isDirectory: true)
+    static let customExtensions = ["wav", "mp3", "m4a", "aiff", "aif", "caf"]
+    private let synthesised: [String: Data] = Dictionary(uniqueKeysWithValues: SoundSynth.names.map { ($0, SoundSynth.wav($0)) })
+    private var players: [AVAudioPlayer] = []
+
+    static func customFile(_ name: String) -> URL? {
+        customExtensions.lazy.map { customFolder.appendingPathComponent("\(name).\($0)") }
+            .first { FileManager.default.fileExists(atPath: $0.path) }
+    }
+    static func customOverrides() -> [String]? {
+        SoundSynth.names.compactMap { customFile($0)?.lastPathComponent }
+    }
+    static func revealCustomFolder() {
+        try? FileManager.default.createDirectory(at: customFolder, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(customFolder)
+    }
+    func play(_ kind: PingKind, volume: Double) {
+        guard volume > 0 else { return }
+        // Custom files are read on each ping, so a replaced file applies without a restart.
+        let custom = Self.customFile(kind.soundName).flatMap { try? Data(contentsOf: $0) }
+        guard let bytes = custom ?? synthesised[kind.soundName] else { return }
+        // An unreadable custom file is skipped silently; the ping still shows.
+        guard let player = try? AVAudioPlayer(data: bytes) else { return }
+        player.volume = Float(volume)
+        player.delegate = self
+        player.prepareToPlay()
+        // Bound simultaneous playback without imposing the game's rate limit.
+        if players.count >= 12 { players.removeFirst().stop() }
+        players.append(player)
+        player.play()
+    }
+    func stopAll() { players.forEach { $0.stop() }; players.removeAll() }
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        players.removeAll { $0 === player }
+    }
+}

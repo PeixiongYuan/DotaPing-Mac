@@ -1,0 +1,20 @@
+#!/bin/zsh
+set -euo pipefail
+cd "${0:A:h:h}"
+source scripts/compile.sh
+build_core -O
+"${SWIFTC[@]}" -O -module-name DotaPing -I "$BUILD/modules" -L "$BUILD" -lPingCore Sources/DotaPing/*.swift -o "$BUILD/DotaPing"
+APP="$PWD/dist/DotaPing.app"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+cp "$BUILD/DotaPing" "$APP/Contents/MacOS/DotaPing"
+cp Resources/Info.plist "$APP/Contents/Info.plist"
+if [[ ! -f "$APP/Contents/Resources/AppIcon.icns" || scripts/make_icon.swift -nt "$APP/Contents/Resources/AppIcon.icns" ]]; then
+    rm -rf "$BUILD/AppIcon.iconset"
+    "${SWIFTC[@]}" scripts/make_icon.swift -o "$BUILD/make_icon"
+    "$BUILD/make_icon" "$BUILD/AppIcon.iconset"
+    iconutil -c icns "$BUILD/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
+fi
+codesign --force --sign - --identifier local.dotaping.DotaPing "$APP"
+codesign --verify --deep --strict "$APP"
+"$APP/Contents/MacOS/DotaPing" --check-assets
+print "Built: $APP"
