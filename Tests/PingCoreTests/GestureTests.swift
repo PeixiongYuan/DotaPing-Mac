@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import CryptoKit
 import PingCore
 
 private var failures = 0
@@ -298,6 +299,28 @@ final class GestureTests {
         let loud = attack.mix(main: PCM(sampleRate: 100, channels: [[1, 1]]), layer: nil)
         XCTAssertTrue(abs((loud.channels[0].max() ?? 0) - 0.98) < 0.0001)
     }
+    /// Run from the repository root (scripts/test.sh does this).
+    func testBundledGameSoundsMatchTheirSources() {
+        struct Manifest: Decodable { struct File: Decodable { let path: String; let sha256: String }; let files: [File] }
+        let resources = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("Resources")
+        guard let json = try? Data(contentsOf: resources.appendingPathComponent("asset-sources.json")),
+              let manifest = try? JSONDecoder().decode(Manifest.self, from: json) else { XCTAssertTrue(false); return }
+        XCTAssertEqual(Set(manifest.files.map { URL(fileURLWithPath: $0.path).lastPathComponent }), Set(GameSoundRecipe.files))
+        var sources: [String: PCM] = [:]
+        for file in manifest.files {
+            let data = (try? Data(contentsOf: resources.appendingPathComponent(file.path))) ?? Data()
+            XCTAssertEqual(SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(), file.sha256)
+            sources[URL(fileURLWithPath: file.path).lastPathComponent] = WAV.decode(data)
+        }
+        // Mixed lengths follow the layer settings: Attack 0.1 s + 1.605 s / 0.95, Warning 2.35 s / 1.25.
+        for (cue, seconds) in [("ping", 1.9987), ("ping_attack", 1.7894), ("ping_warning", 1.88), ("ping_enemy_ward", 2.9397)] {
+            let recipe = GameSoundRecipe.all.first { $0.output == cue }!
+            guard let main = sources[recipe.file] else { XCTAssertTrue(false); continue }
+            let mixed = recipe.mix(main: main, layer: recipe.layer.flatMap { sources[$0.file] })
+            XCTAssertTrue(abs(Double(mixed.frameCount)/Double(mixed.sampleRate) - seconds) < 0.001)
+            XCTAssertTrue(mixed.channels.joined().allSatisfy { abs($0) <= 0.98 })
+        }
+    }
     func testGlyphsFitTheUnitSquare() {
         let unit = CGRect(x: 0, y: 0, width: 1, height: 1).insetBy(dx: -0.001, dy: -0.001)
         for kind in PingKind.allCases {
@@ -355,6 +378,7 @@ enum Checks {
             ("Both languages complete", test.testBothLanguagesAreComplete),
             ("WAV encode and decode", test.testWAVRoundTrip),
             ("Game sound mixing follows the sound events", test.testGameSoundRecipesFollowTheSoundEvents),
+            ("Bundled game sounds match their sources", test.testBundledGameSoundsMatchTheirSources),
             ("Glyphs fit the unit square", test.testGlyphsFitTheUnitSquare),
             ("Synthesised cues are short and click-free", test.testSynthesisedCuesAreShortAndClean)
         ]

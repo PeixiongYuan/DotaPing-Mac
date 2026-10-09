@@ -14,6 +14,27 @@ enum Assets {
         context.addPath(path); context.drawPath(using: Glyphs.glyph(kind).evenOdd ? .eoFill : .fill)
         context.restoreGState()
     }
+    /// The game's ping sound files, in the app bundle or, when run from a build
+    /// folder, in the repository.
+    static let soundsFolder: URL = {
+        if let bundled = Bundle.main.resourceURL?.appendingPathComponent("Sounds"),
+           FileManager.default.fileExists(atPath: bundled.path) { return bundled }
+        return URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().appendingPathComponent("Resources/Sounds")
+    }()
+    /// Each cue mixed from the bundled files the way the game's sound events
+    /// play them. A cue whose files are missing is left out.
+    static let gameCues: [String: Data] = {
+        func load(_ file: String) -> PCM? { (try? Data(contentsOf: soundsFolder.appendingPathComponent(file))).flatMap(WAV.decode) }
+        var cues: [String: Data] = [:]
+        for recipe in GameSoundRecipe.all {
+            guard let main = load(recipe.file) else { continue }
+            let layer = recipe.layer.flatMap { load($0.file) }
+            if recipe.layer != nil && layer == nil { continue }
+            cues[recipe.output] = WAV.encode(recipe.mix(main: main, layer: layer))
+        }
+        return cues
+    }()
     static func icon(_ kind: PingKind, color: NSColor) -> NSImage {
         NSImage(size: NSSize(width: 64, height: 64), flipped: false) { rect in
             draw(kind, in: rect.insetBy(dx: 2, dy: 2), color: color); return true
@@ -32,7 +53,7 @@ extension PingKind {
 }
 
 /// Plays, in order of preference: a same-named file from the custom folder,
-/// the downloaded game sound when selected, or the synthesised cue.
+/// the game's sound when selected, or the synthesised cue.
 final class SoundPlayer: NSObject, AVAudioPlayerDelegate {
     var useGameSounds = false
     static let customFolder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -56,7 +77,7 @@ final class SoundPlayer: NSObject, AVAudioPlayerDelegate {
         guard volume > 0 else { return }
         // Files are read on each ping, so a replaced file applies without a restart.
         let custom = Self.customFile(kind.soundName).flatMap { try? Data(contentsOf: $0) }
-        let game = useGameSounds ? try? Data(contentsOf: GameSounds.file(kind.soundName)) : nil
+        let game = useGameSounds ? Assets.gameCues[kind.soundName] : nil
         guard let bytes = custom ?? game ?? synthesised[kind.soundName] else { return }
         // An unreadable custom file is skipped silently; the ping still shows.
         guard let player = try? AVAudioPlayer(data: bytes) else { return }

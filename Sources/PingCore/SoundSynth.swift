@@ -1,8 +1,8 @@
 import Foundation
 
-/// Short original cues, synthesised in memory. No game audio is bundled; the
-/// app can download the game's own ping sounds on request (`GameSoundRecipe`),
-/// and a user may place their own files in the custom sound folder.
+/// Short cues synthesised in memory: the alternative to the game's own ping
+/// sounds (`GameSoundRecipe`). A user may also place their own files in the
+/// custom sound folder.
 public enum SoundSynth {
     public static let sampleRate = 44_100
     public static let names = ["ping", "ping_warning", "ping_waypoint", "ping_attack", "ping_enemy_ward", "ping_friendly_ward", "ping_defense"]

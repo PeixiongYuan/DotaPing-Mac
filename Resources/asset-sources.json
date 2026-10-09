@@ -1,0 +1,72 @@
+{
+  "soundSource": "https://github.com/Source2Sounds/dota2",
+  "soundRevision": "a4ba82b96ef173da6c83e8a658e3e7125efc3968",
+  "gamePath": "sounds/ui/",
+  "soundNotice": "Dota 2 sound files, \u00a9 Valve Corporation, from the community archive Source2Sounds/dota2. Stored unmodified; DotaPing mixes them at launch following soundevents/game_sounds_ui_imported.vsndevts.",
+  "files": [
+    {
+      "path": "Sounds/ping.wav",
+      "sha256": "c27fc0e196b841a4fde420ba0d644e79f188be87226bcbfe08102ed2f04680e4",
+      "urls": [
+        "https://raw.githubusercontent.com/Source2Sounds/dota2/a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping.wav",
+        "https://cdn.jsdelivr.net/gh/Source2Sounds/dota2@a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping.wav"
+      ]
+    },
+    {
+      "path": "Sounds/ping_attack.wav",
+      "sha256": "492b742f634ba0af80f932f7f1f8a52b0c6320753bbd97f42fdf663c5af90098",
+      "urls": [
+        "https://raw.githubusercontent.com/Source2Sounds/dota2/a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_attack.wav",
+        "https://cdn.jsdelivr.net/gh/Source2Sounds/dota2@a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_attack.wav"
+      ]
+    },
+    {
+      "path": "Sounds/ping_attack_layer.wav",
+      "sha256": "98cd0130c28ef20e0e4766f6597393e86f5d915256235f548d52c292c292fa29",
+      "urls": [
+        "https://raw.githubusercontent.com/Source2Sounds/dota2/a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_attack_layer.wav",
+        "https://cdn.jsdelivr.net/gh/Source2Sounds/dota2@a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_attack_layer.wav"
+      ]
+    },
+    {
+      "path": "Sounds/ping_defense.wav",
+      "sha256": "b2d036427f605cd6f0f68e28609e977575ea46c08a73d7eecd4d3049803117fc",
+      "urls": [
+        "https://raw.githubusercontent.com/Source2Sounds/dota2/a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_defense.wav",
+        "https://cdn.jsdelivr.net/gh/Source2Sounds/dota2@a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_defense.wav"
+      ]
+    },
+    {
+      "path": "Sounds/ping_enemy_ward.wav",
+      "sha256": "6c0ba9f117252bea31c585ade55285f16d615f84b194f589b62c7e96553c5198",
+      "urls": [
+        "https://raw.githubusercontent.com/Source2Sounds/dota2/a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_enemy_ward.wav",
+        "https://cdn.jsdelivr.net/gh/Source2Sounds/dota2@a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_enemy_ward.wav"
+      ]
+    },
+    {
+      "path": "Sounds/ping_need_ward.wav",
+      "sha256": "f220a3cea143ee601fb088163bd434ccdb01a54b4443c0b30bee9449e532c080",
+      "urls": [
+        "https://raw.githubusercontent.com/Source2Sounds/dota2/a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_need_ward.wav",
+        "https://cdn.jsdelivr.net/gh/Source2Sounds/dota2@a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_need_ward.wav"
+      ]
+    },
+    {
+      "path": "Sounds/ping_warning.wav",
+      "sha256": "d2741d9061a8f2bc46adaee3a6302a1d517fd215882a01edc5a36c23ee500830",
+      "urls": [
+        "https://raw.githubusercontent.com/Source2Sounds/dota2/a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_warning.wav",
+        "https://cdn.jsdelivr.net/gh/Source2Sounds/dota2@a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_warning.wav"
+      ]
+    },
+    {
+      "path": "Sounds/ping_warning_layer.wav",
+      "sha256": "ce4ec0121958b4fd02dd8a89f3b033bf6ed876a5cf986e77358b23338f41dab0",
+      "urls": [
+        "https://raw.githubusercontent.com/Source2Sounds/dota2/a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_warning_layer.wav",
+        "https://cdn.jsdelivr.net/gh/Source2Sounds/dota2@a4ba82b96ef173da6c83e8a658e3e7125efc3968/sounds/ui/ping_warning_layer.wav"
+      ]
+    }
+  ]
+}

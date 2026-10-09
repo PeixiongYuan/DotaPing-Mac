@@ -8,7 +8,6 @@ final class AppModel: ObservableObject {
         case synthesized, game
         var id: String { rawValue }
     }
-    enum DownloadState: Equatable { case idle, downloading, failed(String) }
     @Published private(set) var isEnabled = false
     @Published private(set) var awaitingPermission = false
     @Published private(set) var status: Status = .off
@@ -21,15 +20,9 @@ final class AppModel: ObservableObject {
     @Published var player: PlayerColor {
         didSet { defaults.set(player.rawValue, forKey: "playerColor") }
     }
-    /// Selecting the game's sounds downloads them the first time.
     @Published var soundSet: SoundSet {
-        didSet {
-            defaults.set(soundSet.rawValue, forKey: "soundSet")
-            if soundSet == .game && !GameSounds.installed { downloadGameSounds() }
-            sound.useGameSounds = soundSet == .game && GameSounds.installed
-        }
+        didSet { defaults.set(soundSet.rawValue, forKey: "soundSet"); sound.useGameSounds = soundSet == .game }
     }
-    @Published private(set) var download: DownloadState = .idle
     @Published var volume: Double {
         didSet { defaults.set(volume, forKey: "volume") }
     }
@@ -53,10 +46,12 @@ final class AppModel: ObservableObject {
         language = Language(rawValue: defaults.string(forKey: "language") ?? "") ?? .english
         trigger = Trigger(rawValue: defaults.string(forKey: "trigger") ?? "") ?? .controlOptionCommand
         player = PlayerColor(rawValue: defaults.integer(forKey: "playerColor")) ?? .blue
-        soundSet = SoundSet(rawValue: defaults.string(forKey: "soundSet") ?? "") ?? .synthesized
+        soundSet = SoundSet(rawValue: defaults.string(forKey: "soundSet") ?? "") ?? .game
         volume = defaults.object(forKey: "volume") == nil ? 0.55 : min(max(defaults.double(forKey: "volume"), 0), 1)
         scale = defaults.object(forKey: "effectScale") == nil ? 1 : min(max(defaults.double(forKey: "effectScale"), 0.75), 1.5)
-        sound.useGameSounds = soundSet == .game && GameSounds.installed
+        sound.useGameSounds = soundSet == .game
+        // Mix the game sounds off the main thread so the first ping does not wait.
+        DispatchQueue.global(qos: .utility).async { _ = Assets.gameCues }
         input.onAction = { [weak self] action in self?.handle(action) }
         input.onUnavailable = { [weak self] in
             self?.setEnabled(false)
@@ -140,22 +135,7 @@ final class AppModel: ObservableObject {
         NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Library/PreferencePanes/Trackpad.prefPane"))
     }
     func revealCustomSounds() { SoundPlayer.revealCustomFolder() }
-    private func downloadGameSounds() {
-        guard download != .downloading else { return }
-        download = .downloading
-        Task { @MainActor [weak self] in
-            do {
-                try await GameSounds.install()
-                guard let self else { return }
-                self.download = .idle
-                self.sound.useGameSounds = self.soundSet == .game
-            } catch {
-                guard let self else { return }
-                self.download = .failed(error.localizedDescription)
-                self.soundSet = .synthesized
-            }
-        }
-    }
+
     func preview(_ kind: PingKind) {
         previewCleanup?.cancel()
         previewKind = kind; previewToken = UUID(); previewVisible = true

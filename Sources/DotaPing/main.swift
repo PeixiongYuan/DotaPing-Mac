@@ -17,17 +17,6 @@ if let index = CommandLine.arguments.firstIndex(of: "--export-sounds"), CommandL
     } catch { print("Export failed: \(error)"); exit(1) }
 }
 
-// Downloads and mixes the game sounds into the given folder, as the app does on request.
-if let index = CommandLine.arguments.firstIndex(of: "--install-game-sounds"), CommandLine.arguments.count > index+1 {
-    let folder = URL(fileURLWithPath: CommandLine.arguments[index+1])
-    let done = DispatchSemaphore(value: 0)
-    var failure: Error?
-    Task.detached { do { try await GameSounds.install(to: folder) } catch { failure = error }; done.signal() }
-    done.wait()
-    if let failure { print("Install failed: \(failure.localizedDescription)"); exit(1) }
-    print("Installed \(GameSoundRecipe.all.count) game cues: \(folder.path)"); exit(0)
-}
-
 if CommandLine.arguments.contains("--check-assets") {
     var failures: [String] = []
     for kind in PingKind.allCases {
@@ -39,8 +28,13 @@ if CommandLine.arguments.contains("--check-assets") {
         } catch { failures.append("\(kind.soundName): \(error.localizedDescription)") }
     }
     if let custom = SoundPlayer.customOverrides(), !custom.isEmpty { print("Custom sounds in use: " + custom.joined(separator: ", ")) }
-    print("Downloaded game sounds: " + (GameSounds.installed ? GameSounds.folder.path : "not installed"))
-    if failures.isEmpty { print("All 9 glyphs draw and all 7 synthesised cues decode."); exit(0) }
+    for recipe in GameSoundRecipe.all {
+        guard let cue = Assets.gameCues[recipe.output], let player = try? AVAudioPlayer(data: cue), player.duration > 0 else {
+            failures.append("Game sound missing or unreadable: \(recipe.output)"); continue
+        }
+        print("game \(recipe.output): \(String(format: "%.2f", player.duration))s")
+    }
+    if failures.isEmpty { print("All 9 glyphs draw; all 7 game and 7 synthesised cues decode."); exit(0) }
     failures.forEach { print($0) }; exit(1)
 }
 
