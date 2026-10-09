@@ -18,18 +18,22 @@
 
 需要 Apple Silicon Mac、macOS 13 或更新版本。
 
-从 [Releases](https://github.com/PeixiongYuan/DotaPing-Mac/releases) 下载 `DotaPing-v1.2.0-macOS-arm64.zip`，解压后把 `DotaPing.app` 拖进「应用程序」。应用是本地签名、未公证；若系统拒绝打开，先尝试打开一次，再到 **系统设置 → 隐私与安全性** 点 **仍要打开**。
+从 [Releases](https://github.com/PeixiongYuan/DotaPing-Mac/releases) 下载 `DotaPing-v1.3.0-macOS-arm64.zip`，解压后把 `DotaPing.app` 拖进「应用程序」。应用用本项目自己的自签名证书签名、未经公证；若系统拒绝打开，先尝试打开一次，再到 **系统设置 → 隐私与安全性** 点 **仍要打开**。
 
 界面默认是英文：在设置窗口的 **Language** 一栏选「简体中文」即可切换，立即生效。然后打开「启用 DotaPing」，并在 **系统设置 → 隐私与安全性 → 辅助功能** 中允许 DotaPing。窗口内预览不需要权限。
+
+**从 1.3.0 起，更新版本会保留辅助功能权限。** macOS 按 App 的「代码要求」记住授权。1.2.0 及以前用的是临时签名（ad-hoc），这个要求就是二进制哈希，每个新版本都得移除后重新授权。1.3.0 起所有版本都用同一张证书签名，要求变成「Bundle ID `local.dotaping.DotaPing` + 这张证书」，以后的版本都满足。从 1.2.0 或更早版本升级时，需要最后一次移除旧条目并重新允许；之后直接替换 App 即可。
 
 ## 从源码构建
 
 需要 Command Line Tools（`xcode-select --install`），不需要 Xcode、第三方库或网络。
 
 ```sh
-zsh scripts/build.sh   # 生成并本地签名 dist/DotaPing.app
+zsh scripts/build.sh   # 生成并签名 dist/DotaPing.app
 zsh scripts/test.sh    # 手势、数据、语言、图标与音效检查
 ```
+
+`scripts/build.sh` 第一次运行时会在 `.signing/` 里创建一个自签名代码签名身份（单独的钥匙串文件，不进 git，不改动登录钥匙串和系统信任设置），之后每次构建都用它签名，所以自己编译的版本也会保留辅助功能权限。请保留这个文件夹：换了新身份就需要再授权一次。
 
 脚本直接调用 `swiftc`。如果 `swift build` 报 `Invalid manifest` / `Undefined symbols … Package.__allocating_init`，是 Command Line Tools 的 `usr/lib/swift/pm/ManifestAPI/` 下残留了旧版 `*.private.swiftinterface`，重装 Command Line Tools 即可；构建脚本不受影响。
 

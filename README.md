@@ -23,20 +23,24 @@ Apple Silicon Mac with macOS 13 or later.
 
 ## Install
 
-Download `DotaPing-v1.2.0-macOS-arm64.zip` from [Releases](https://github.com/PeixiongYuan/DotaPing-Mac/releases), unzip it and move `DotaPing.app` to Applications.
+Download `DotaPing-v1.3.0-macOS-arm64.zip` from [Releases](https://github.com/PeixiongYuan/DotaPing-Mac/releases), unzip it and move `DotaPing.app` to Applications.
 
-The app is ad-hoc signed, not notarized. If macOS refuses to open it, try once, then go to **System Settings → Privacy & Security** and choose **Open Anyway**.
+The app is signed with the project's own self-signed certificate and is not notarized. If macOS refuses to open it, try once, then go to **System Settings → Privacy & Security** and choose **Open Anyway**.
 
 Turn on **Enable DotaPing** and allow DotaPing under **System Settings → Privacy & Security → Accessibility**. The global shortcut needs this permission; the in-window preview does not.
+
+**Updating keeps the permission from 1.3.0 on.** macOS remembers Accessibility access by the app's code requirement. Up to 1.2.0 the app was ad-hoc signed, so that requirement was the binary's hash and every new version had to be removed and allowed again. From 1.3.0 every release is signed with the same certificate, and the requirement is "bundle identifier `local.dotaping.DotaPing`, signed by this certificate", which later versions also meet. When coming from 1.2.0 or earlier, remove the old DotaPing entry and allow it once more; after that, just replace the app.
 
 ## Build from source
 
 Needs the Command Line Tools (`xcode-select --install`). No Xcode, packages or network access.
 
 ```sh
-zsh scripts/build.sh   # builds and ad-hoc signs dist/DotaPing.app
+zsh scripts/build.sh   # builds and signs dist/DotaPing.app
 zsh scripts/test.sh    # gesture, data, language, icon and audio checks
 ```
+
+On first run `scripts/build.sh` creates a self-signed code-signing identity in `.signing/` (its own keychain file, ignored by git; the login keychain and trust settings are not touched) and signs every later build with it, so your own builds also keep the Accessibility permission. Keep that folder: a new identity means allowing the app once more.
 
 The scripts call `swiftc` directly. `Package.swift` is kept for Xcode and `swift build`. If `swift build` fails with `Invalid manifest` / `Undefined symbols … Package.__allocating_init`, your Command Line Tools have stale `*.private.swiftinterface` files under `usr/lib/swift/pm/ManifestAPI/`; reinstalling them fixes it, and the scripts work either way.
 

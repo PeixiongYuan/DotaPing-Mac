@@ -1,10 +1,11 @@
-# DotaPing 1.2 verification
+# DotaPing 1.3 verification
 
 Date: 2026-10-09. Apple Silicon, macOS 27.0, Swift 6.4 (Command Line Tools only), built-in Retina display.
 
 ## Verified
 
-- `scripts/build.sh` builds a release `dist/DotaPing.app` with `swiftc` and no compiler warnings. Version 1.2.0 (build 3), about 3.6 MB including the sound files, ad-hoc signed as `local.dotaping.DotaPing`; `codesign --verify --deep --strict` passes.
+- `scripts/build.sh` builds a release `dist/DotaPing.app` with `swiftc` and no compiler warnings. Version 1.3.0 (build 4), about 3.6 MB including the sound files, signed with the self-signed "DotaPing Local Signing" identity as `local.dotaping.DotaPing`; `codesign --verify --deep --strict` passes.
+- Signing: the designated requirement is now `identifier "local.dotaping.DotaPing" and certificate leaf = H"…"` instead of an ad-hoc `cdhash`. After a source change and rebuild (new CDHash), the new app satisfies the previous build's requirement (`codesign --verify --test-requirement`); an ad-hoc rebuild does not, which is why earlier versions lost the Accessibility permission. Creating the identity left the user keychain search list unchanged.
 - `--check-assets`: all ten icons draw; all seven game cues mixed from the bundled files (1.50–2.94 s) and all seven synthesized cues (0.50–0.66 s) decode in AVAudioPlayer. Mixing the game cues at launch takes about 0.04 s.
 - `scripts/test.sh`: 30 scenarios, 277 assertions, 0 failures. Every one of the nine 40° slots is checked at its centre and both edges. Besides the 14 gesture scenarios carried over from LoLPing-Mac:
   - Trackpad: a tap or click while the wheel is open sends once, and releasing the keys afterwards does not send again; a click before the wheel opens passes through as another shortcut; a drag that DotaPing does not own still cancels.
@@ -24,7 +25,7 @@ Date: 2026-10-09. Apple Silicon, macOS 27.0, Swift 6.4 (Command Line Tools only)
 
 ## Not verified
 
-- **Global input has not been tested live.** It needs Accessibility permission (System Settings → Privacy & Security → Accessibility). The ad-hoc signature changes on every rebuild, so an old entry may need to be removed and added again.
+- **Global input has not been tested live.** It needs Accessibility permission (System Settings → Privacy & Security → Accessibility). Permission carry-over was checked through the code requirement, not by granting Accessibility and installing a newer version; moving from 1.2.0 or earlier needs one last removal and re-grant.
 - Tap to Click, press-and-drag, three-finger drag, two-finger tap and momentum scrolling are covered by the state-machine tests (they arrive as leftMouseDown/Up, leftMouseDragged, rightMouseDown and scrollWheel events) but were not performed on hardware.
 - External displays, display scaling and overlays above full-screen games or apps have not been tested; protected system screens may not show the overlay.
 - `swift build` cannot read any `Package.swift` on this machine (stale `PackageDescription` interface files in the Command Line Tools), so `Package.swift` was not built here. The build scripts call `swiftc` directly and are unaffected.

@@ -17,7 +17,9 @@ if [[ ! -f "$APP/Contents/Resources/AppIcon.icns" || scripts/make_icon.swift -nt
     "$BUILD/make_icon" "$BUILD/AppIcon.iconset"
     iconutil -c icns "$BUILD/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
 fi
-codesign --force --sign - --identifier local.dotaping.DotaPing "$APP"
+source scripts/signing.sh
+ensure_signing_identity
+codesign --force --sign "$SIGN_ID" --keychain "$SIGN_KEYCHAIN" --identifier local.dotaping.DotaPing --timestamp=none "$APP"
 codesign --verify --deep --strict "$APP"
 "$APP/Contents/MacOS/DotaPing" --check-assets
 print "Built: $APP"
