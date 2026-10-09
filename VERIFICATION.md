@@ -1,10 +1,14 @@
-# DotaPing 1.3 verification
+# DotaPing 1.4 verification
 
-Date: 2026-10-09. Apple Silicon, macOS 27.0, Swift 6.4 (Command Line Tools only), built-in Retina display.
+Date: 2026-10-09.
 
-## Verified
+## macOS
 
-- `scripts/build.sh` builds a release `dist/DotaPing.app` with `swiftc` and no compiler warnings. Version 1.3.0 (build 4), about 3.6 MB including the sound files, signed with the self-signed "DotaPing Local Signing" identity as `local.dotaping.DotaPing`; `codesign --verify --deep --strict` passes.
+Apple Silicon, macOS 27.0, Swift 6.4 (Command Line Tools only), built-in Retina display.
+
+### Verified
+
+- `scripts/build.sh` builds a release `dist/DotaPing.app` with `swiftc` and no compiler warnings. Version 1.4.0 (build 5), about 3.6 MB including the sound files, signed with the self-signed "DotaPing Local Signing" identity as `local.dotaping.DotaPing`; `codesign --verify --deep --strict` passes.
 - Signing: the designated requirement is now `identifier "local.dotaping.DotaPing" and certificate leaf = H"…"` instead of an ad-hoc `cdhash`. After a source change and rebuild (new CDHash), the new app satisfies the previous build's requirement (`codesign --verify --test-requirement`); an ad-hoc rebuild does not, which is why earlier versions lost the Accessibility permission. Creating the identity left the user keychain search list unchanged.
 - `--check-assets`: all ten icons draw; all seven game cues mixed from the bundled files (1.50–2.94 s) and all seven synthesized cues (0.50–0.66 s) decode in AVAudioPlayer. Mixing the game cues at launch takes about 0.04 s.
 - `scripts/test.sh`: 30 scenarios, 277 assertions, 0 failures. Every one of the nine 40° slots is checked at its centre and both edges. Besides the 14 gesture scenarios carried over from LoLPing-Mac:
@@ -23,7 +27,7 @@ Date: 2026-10-09. Apple Silicon, macOS 27.0, Swift 6.4 (Command Line Tools only)
 - Game sounds: the eight files from Source2Sounds/dota2 at commit `a4ba82b` have exactly the durations the game's sound events list (`vsnd_duration`). The mixed Attack (1.79 s = 0.1 s + 1.60 s ÷ 0.95) and Warning (1.88 s = 2.35 s ÷ 1.25) lengths match the layer settings; peaks are 0.42–0.98. `scripts/fetch_sounds.py` re-verifies the files against the manifest. Version 1.0.0's in-app download of the same files also completed on the author's Mac.
 - The built app was launched: the process runs and the settings window opens, with no crash reports.
 
-## Not verified
+### Not verified
 
 - **Global input has not been tested live.** It needs Accessibility permission (System Settings → Privacy & Security → Accessibility). Permission carry-over was checked through the code requirement, not by granting Accessibility and installing a newer version; moving from 1.2.0 or earlier needs one last removal and re-grant.
 - Tap to Click, press-and-drag, three-finger drag, two-finger tap and momentum scrolling are covered by the state-machine tests (they arrive as leftMouseDown/Up, leftMouseDragged, rightMouseDown and scrollWheel events) but were not performed on hardware.
@@ -31,3 +35,22 @@ Date: 2026-10-09. Apple Silicon, macOS 27.0, Swift 6.4 (Command Line Tools only)
 - `swift build` cannot read any `Package.swift` on this machine (stale `PackageDescription` interface files in the Command Line Tools), so `Package.swift` was not built here. The build scripts call `swiftc` directly and are unaffected.
 - Playback of the bundled sounds was checked by decoding them in the app (`--check-assets`), not by listening.
 - Wheel positions follow LoLPing's layout and were not compared with the in-game default. Names, colors and sound grouping come from the game's data files. Icons are redrawn vectors; the bundled sound files are the game's own, © Valve. The landing animation is a reconstruction from the minimap ping parameters, not a frame-by-frame comparison.
+
+## Windows
+
+Built and run on a GitHub-hosted runner: Windows Server 2025 (image windows-2025-vs2026), .NET 10, x64. Every run of the [Windows workflow](.github/workflows/windows.yml) repeats these steps.
+
+### Verified
+
+- `windows/Checks`: 30 scenarios, 253 assertions, 0 failures — the macOS gesture scenarios with Windows triggers (Ctrl+Alt+Shift, Ctrl+Alt, Alt + Left Click), every wheel slot, both languages, WAV round trip, game-sound mixing, the bundled files' SHA-256 and mixed lengths, glyph outlines and synthesized cues.
+- `dotnet publish` builds a self-contained single-file `DotaPing.exe` (zip about 72 MB) with per-monitor DPI awareness (PerMonitorV2).
+- `--check-assets`: all ten glyph outlines parse within the unit square; all seven game cues (1.50–2.94 s, the same lengths as on macOS) and seven synthesized cues decode.
+- `--visual-check`: 40 pixel comparisons pass (each of the ten animations changes, clears when it ends and disappears when stopped). Reviewed the rendered wheels (all ten states), animation phases, player colors and the settings window in light and dark Fluent themes, with the Alt + Left Click trigger and in Simplified Chinese. Icons, colors and layout match the macOS renderer; Chinese text renders.
+- `--input-self-test` with the real low-level hooks and `SendInput`-injected input, all six pass: hold Ctrl+Alt+Shift, move up, release → Caution; Esc cancels with no ping; a click while the wheel is open sends On My Way once; Alt-click → Ping; Alt-hold, drag left, release → Enemy Ward; Ctrl+Alt-click → Warning.
+
+### Not verified
+
+- Not run on a physical Windows PC: real touchpad gestures (tap, two-finger tap, press-and-drag), mixed-DPI multi-monitor placement, the tray icon and menu, sound playback by ear, and behaviour over games in borderless or exclusive fullscreen.
+- The menu-bar suppression after Alt-clicks (the injected unassigned key) was not checked against an app with a menu bar.
+- Input from an elevated (administrator) window is not delivered to DotaPing by design of Windows; this was not exercised.
+- The executable is not code-signed, so SmartScreen warns on first launch.

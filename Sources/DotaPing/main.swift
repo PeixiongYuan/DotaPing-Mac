@@ -17,6 +17,34 @@ if let index = CommandLine.arguments.firstIndex(of: "--export-sounds"), CommandL
     } catch { print("Export failed: \(error)"); exit(1) }
 }
 
+// Writes the glyph outlines for the Windows build as WPF path markup in a unit
+// square with y pointing down, keyed by PingKind raw value.
+if let index = CommandLine.arguments.firstIndex(of: "--export-glyphs"), CommandLine.arguments.count > index+1 {
+    func point(_ p: CGPoint) -> String { String(format: "%.5f,%.5f", Double(p.x), Double(1-p.y)) }
+    var glyphs: [String: String] = [:]
+    for kind in PingKind.allCases {
+        let glyph = Glyphs.glyph(kind)
+        var parts = [glyph.evenOdd ? "F0" : "F1"]
+        glyph.path.applyWithBlock { element in
+            let points = element.pointee.points
+            switch element.pointee.type {
+            case .moveToPoint: parts.append("M" + point(points[0]))
+            case .addLineToPoint: parts.append("L" + point(points[0]))
+            case .addQuadCurveToPoint: parts.append("Q" + point(points[0]) + " " + point(points[1]))
+            case .addCurveToPoint: parts.append("C" + point(points[0]) + " " + point(points[1]) + " " + point(points[2]))
+            case .closeSubpath: parts.append("Z")
+            @unknown default: break
+            }
+        }
+        glyphs[kind.rawValue] = parts.joined(separator: " ")
+    }
+    do {
+        let data = try JSONSerialization.data(withJSONObject: glyphs, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: URL(fileURLWithPath: CommandLine.arguments[index+1]))
+        print("Exported \(glyphs.count) glyphs"); exit(0)
+    } catch { print("Export failed: \(error)"); exit(1) }
+}
+
 if CommandLine.arguments.contains("--check-assets") {
     var failures: [String] = []
     for kind in PingKind.allCases {

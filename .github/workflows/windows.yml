@@ -1,0 +1,79 @@
+name: Windows
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Core checks
+        run: dotnet run --project windows/Checks -c Release
+
+      - name: Publish single-file app
+        run: dotnet publish windows/App/DotaPing.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
+
+      # DotaPing.exe is a GUI program; Start-Process waits for it and captures its output.
+      - name: Asset check
+        shell: pwsh
+        run: |
+          $p = Start-Process publish\DotaPing.exe -ArgumentList '--check-assets' -Wait -PassThru -NoNewWindow -RedirectStandardOutput check.txt
+          Get-Content check.txt
+          exit $p.ExitCode
+
+      - name: Visual check
+        shell: pwsh
+        run: |
+          $p = Start-Process publish\DotaPing.exe -ArgumentList '--visual-check','visuals' -Wait -PassThru -NoNewWindow -RedirectStandardOutput visual.txt
+          Get-Content visual.txt
+          exit $p.ExitCode
+
+      - name: Input self-test
+        shell: pwsh
+        run: |
+          $p = Start-Process publish\DotaPing.exe -ArgumentList '--input-self-test' -Wait -PassThru -NoNewWindow -RedirectStandardOutput input.txt
+          Get-Content input.txt
+          Copy-Item input.txt visuals\input-self-test.txt
+          exit $p.ExitCode
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path publish\DotaPing.exe -DestinationPath dist\DotaPing-windows-x64.zip
+          Get-FileHash dist\DotaPing-windows-x64.zip -Algorithm SHA256 | Format-List
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          $name = "DotaPing-$tag-windows-x64.zip"
+          Copy-Item dist\DotaPing-windows-x64.zip "dist\$name"
+          gh release upload $tag "dist\$name" --clobber --repo "${{ github.repository }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DotaPing-windows-x64
+          path: dist/DotaPing-windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visuals
+          path: visuals

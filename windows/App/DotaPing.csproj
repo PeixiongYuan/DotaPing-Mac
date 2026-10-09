@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <!-- WPF and Windows Forms share type names; usings are explicit. -->
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>DotaPing</AssemblyName>
+    <RootNamespace>DotaPing</RootNamespace>
+    <StartupObject>DotaPing.Program</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>DotaPing.ico</ApplicationIcon>
+    <Version>1.4.0</Version>
+    <Product>DotaPing</Product>
+    <Description>Dota 2 ping wheel on the Windows desktop</Description>
+    <!-- Application.ThemeMode (Fluent) is marked experimental. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\DotaPing.Core.csproj" />
+    <!-- The game's ping sound files, shared with the macOS app (see Resources/asset-sources.json). -->
+    <EmbeddedResource Include="..\..\Resources\Sounds\*.wav" LogicalName="Sounds.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="DotaPing.ico" LogicalName="DotaPing.ico" />
+  </ItemGroup>
+
+</Project>

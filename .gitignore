@@ -3,3 +3,5 @@
 dist/
 Verification/Visuals/
 .signing/
+windows/**/bin/
+windows/**/obj/
